@@ -1,8 +1,10 @@
 require("dotenv").config();
+require("./middleware/passport");
 
 const express = require("express");
 const bodyParser = require("body-parser");
 const sequelize = require("./config/database");
+const passport = require('passport')
 
 //routes-connection-function
 const routeDelivery = require("./routes/index");
@@ -18,6 +20,10 @@ app.use(bodyParser.json());
 
 //route-connection
 app = routeDelivery(app);
+
+//jwt
+app.use(passport.initialize())
+
 
 startServer();
 

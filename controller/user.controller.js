@@ -3,8 +3,8 @@ const userService = require("../services/user/user.service");
 class UserController {
   async get(req, res, next) {
     try {
+      console.log(`here`)
       const response = await userService.get();
-
       res.json(response);
     } catch (err) {
       next(err);

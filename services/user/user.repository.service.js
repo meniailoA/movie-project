@@ -5,7 +5,7 @@ class UserRepositoryService {
     return await User.create(user);
   }
 
-  async get(id) {
+  async get() {
     return await User.findAll();
   }
 
@@ -19,7 +19,9 @@ class UserRepositoryService {
 
   async login() {}
 
-  async registration() {}
+  async findUserByEmail(email) {
+    return await User.findOne({ where: { email } });
+  }
 }
 
 module.exports = new UserRepositoryService();
