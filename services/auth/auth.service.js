@@ -15,10 +15,10 @@ class AuthService {
       id: userExist.id,
       email: userExist.email,
     };
-
     //Bearer token, so, u need to use a Bearer Token type in postman.
+    //Or use Bearer + " " + token in Authorization header :)
     const token = jwt.sign(secretData, process.env.SECRET_JWT, {
-      expiresIn: "15m",
+      expiresIn: "1h",
     });
 
     return {
