@@ -5,12 +5,9 @@ class Actor extends Model {}
 
 Actor.init(
   {
-    firstName: {
+    name: {
       type: DataTypes.STRING,
-    },
-    lastName: {
-      type: DataTypes.STRING,
-    },
+    }
   },
   { sequelize, modelName: "Actor", timestamps: false }
 );

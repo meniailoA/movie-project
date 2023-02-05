@@ -15,10 +15,15 @@ MovieToActor.init(
       type: DataTypes.INTEGER,
     },
   },
-  { sequelize, modelName: "MovieToActor", timestamps: false }
+  {
+    sequelize,
+    modelName: "MovieToActor",
+    timestamps: false,
+    onDelete: "CASCADE",
+  }
 );
 
-Actor.belongsToMany(Movie, { through: "MovieToActor" });
-Movie.belongsToMany(Actor, { through: "MovieToActor" });
+Actor.belongsToMany(Movie, { through: "MovieToActor", onDelete: "CASCADE" });
+Movie.belongsToMany(Actor, { through: "MovieToActor", onDelete: "CASCADE" });
 
 module.exports = MovieToActor;

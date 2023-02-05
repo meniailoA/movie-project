@@ -3,6 +3,6 @@ module.exports.schema = (movie, actors) => {
         Title: movie.name,
         ["Release Year"]: movie.date,
         Format: movie.format,
-        Start: actors
+        Stars: actors
     }
 }

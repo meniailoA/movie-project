@@ -10,9 +10,8 @@ class MovieRepositoryService {
   async _moveDataToTable(movies) {
     const format = FormatEnum.getValues();
 
-    movies.map(async (element) => {
-      console.log(element);
-      const movieExist = await this.findMovieByName(element.Title.trim());
+    const promise = movies.map(async (element) => {
+      const movieExist = await this.findMovieByName(element.Title);
 
       if (!movieExist) {
         const formatMovie = format.includes(element.Format.trim())
@@ -25,30 +24,32 @@ class MovieRepositoryService {
           formatMovie
         );
 
-        element.Stars.trim()
-          .split(",")
-          .map(async (el) => {
-            const firstName = el.trim().split(" ")[0];
-            const lastName = el.trim().split(" ")[1];
+        let stars = element.Stars.trim();
 
-            const actor = await this.findActorByName(firstName, lastName);
+        const startsPromise = stars.split(", ").map(async (name) => {
+          let actor = await this.findActorByName(name);
 
-            if (!actor) {
-              const actorNew = await this.createActor(firstName, lastName);
+          if (!actor) {
+            const actorNew = await this.createActor(name);
 
-              await this.createActorToMovie(actorNew.id, movie.id);
-            } else {
-              const checkExistActorInMovie = await this.findActorExistInMoview(
-                actor.id,
-                movie.id
-              );
-              if (!checkExistActorInMovie) {
-                await this.createActorToMovie(actor.id, movie.id);
-              }
+            return await this.createActorToMovie(actorNew.id, movie.id);
+          } else {
+            const checkExistActorInMovie = await this.findActorExistInMoview(
+              actor.id,
+              movie.id
+            );
+
+            if (!checkExistActorInMovie) {
+              return await this.createActorToMovie(actor.id, movie.id);
             }
-          });
+          }
+        });
+
+        await Promise.all(startsPromise);
       }
     });
+
+    await Promise.all(promise);
   }
 
   async findMovieByName(name) {
@@ -60,13 +61,26 @@ class MovieRepositoryService {
     });
   }
 
-  async findActorByName(firstName, lastName) {
-    return await Actor.findOne({
+  async findMovieByNameLike(name) {
+    return await Movie.findAll({
       where: {
-        firstName,
-        lastName,
+        name: {
+          [Op.like]: `%${name}%`,
+        },
       },
     });
+  }
+
+  async findActorByName(name) {
+    return await Actor.findOne({
+      where: {
+        name: name.toString(),
+      },
+    });
+  }
+
+  async findAllActors() {
+    return await Actor.findAll();
   }
 
   async findActorById(id) {
@@ -85,8 +99,14 @@ class MovieRepositoryService {
     return await MovieToActor.create({ ActorId, MovieId });
   }
 
-  async createActor(firstName, lastName) {
-    return await Actor.create({ firstName, lastName });
+  async createActor(name) {
+    return await Actor.create({
+      name,
+    });
+  }
+
+  async deleteMovie(name) {
+    return await Movie.destroy({ where: { name } });
   }
 
   async createMovie(name, date, format) {
@@ -99,6 +119,12 @@ class MovieRepositoryService {
 
   async findAllMovieToActorByMovieId(MovieId) {
     return await MovieToActor.findAll({ where: { MovieId } });
+  }
+
+  async findAllMovies(sort) {
+    return await Movie.findAll({
+      order: [["name", "ASC"]],
+    });
   }
 }
 

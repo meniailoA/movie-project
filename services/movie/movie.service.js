@@ -44,7 +44,9 @@ class MovieService {
     for (let i in array) {
       if (array[i].split(":")[0] && array[i].split(":")[1]) {
         arr.push({
-          [array[i].split(":")[0]]: array[i].split(":")[1]
+          [array[i].split(": ")[0]]: array[i].split(": ")[2]
+            ? `${array[i].split(": ")[1]} ${array[i].split(": ")[2]}`
+            : array[i].split(": ")[1],
         });
       }
     }
@@ -59,7 +61,6 @@ class MovieService {
       );
       count++;
     }
-
     return response;
   }
 
@@ -71,11 +72,28 @@ class MovieService {
     return await repository._moveDataToTable(this._fileReaderWeb(file));
   }
 
-  async getInfoAboutMovieByName(name) {
-    const movie = await repository.findMovieByName(name);
+  async _findActorsToMovie(movie, isArr = true) {
+    if (isArr) {
+      const promise = movie.map(async (m) => {
+        const moviesWithActors = await repository.findAllMovieToActorByMovieId(
+          m.id
+        );
 
-    if (!movie) return "There is no such movie in database";
+        const actors = [];
 
+        const promise = moviesWithActors.map(async (el) => {
+          const actor = await repository.findActorById(el.ActorId);
+
+          actors.push(`${actor.name}`);
+        });
+
+        await Promise.all(promise);
+
+        return getMovieSchema(m, actors);
+      });
+
+      return await Promise.all(promise);
+    }
     const moviesWithActors = await repository.findAllMovieToActorByMovieId(
       movie.id
     );
@@ -85,12 +103,104 @@ class MovieService {
     const promise = moviesWithActors.map(async (el) => {
       const actor = await repository.findActorById(el.ActorId);
 
-      actors.push(`${actor.firstName} ${actor.lastName}`);
+      actors.push(`${actor.name}`);
     });
 
     await Promise.all(promise);
 
     return getMovieSchema(movie, actors);
+  }
+
+  async getInfoAboutMovieByName(name) {
+    const movie = await repository.findMovieByNameLike(name);
+
+    if (!movie.length) return "There is no such movie in database";
+
+    return await this._findActorsToMovie(movie);
+  }
+
+  async getInfoAboutAllMovies() {
+    const movie = await repository.findAllMovies();
+
+    return await this._findActorsToMovie(movie);
+  }
+
+  async createMovie(movieObj) {
+    const checkMovie = await repository.findMovieByName(movieObj.name);
+
+    if (checkMovie) return "There is movie with the same name";
+
+    const movie = await repository.createMovie(
+      movieObj.name,
+      movieObj.date,
+      movieObj.format
+    );
+
+    const promise = movieObj.actors.map(async (name) => {
+      name = name.trim();
+
+      const actor = await repository.findActorByName(name);
+
+      if (!actor) {
+        const actorNew = await repository.createActor(name);
+
+        return await repository.createActorToMovie(actorNew.id, movie.id);
+      } else {
+        const checkExistActorInMovie = await repository.findActorExistInMoview(
+          actor.id,
+          movie.id
+        );
+        if (!checkExistActorInMovie) {
+          await repository.createActorToMovie(actor.id, movie.id);
+        }
+      }
+    });
+
+    await Promise.all(promise);
+
+    return "Successfully added";
+  }
+
+  async getMovieInfoByActorName(name) {
+    let allActors = await repository.findAllActors();
+    allActors = allActors.map((el) => el.name);
+
+    const movie = await repository.findMovieByName(name);
+
+    if (!allActors.includes(name) && !movie)
+      return `There is no actor and movie with that name`;
+    else if (!allActors.includes(name) && movie) {
+      const moviesWithActors = await repository.findAllMovieToActorByMovieId(
+        movie.id
+      );
+
+      const actors = [];
+
+      const promise = moviesWithActors.map(async (el) => {
+        const actor = await repository.findActorById(el.ActorId);
+
+        actors.push(`${actor.name}`);
+      });
+
+      await Promise.all(promise);
+
+      const movieResponse = await this._findActorsToMovie(movie, false);
+
+      return `There is no actor with that name, but i found movie with the same name: 
+
+      Title: ${movieResponse.Title}, 
+      Release Year: ${movieResponse["Release Year"]},
+      Format: ${movieResponse.Format},
+      Stars: ${movieResponse.Start}
+
+`;
+    }
+
+    return await this._findActorsToMovie(movie, false);
+  }
+
+  async deleteMovie(name) {
+    return await repository.deleteMovie(name);
   }
 }
 
