@@ -1,7 +1,7 @@
 const path = require("path");
 const fs = require("fs");
 
-//function of automatic loading of routes
+//Function of automatic loading routes to app
 function initializeRouter(app) {
   bootstrap(__dirname).forEach(loadRouteFile);
 

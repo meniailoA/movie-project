@@ -1,9 +1,13 @@
 class FormatMovieEnum {
-    constructor() {
-        this.VNS = 'VNS';
-        this.DVD = 'DVD';
-        this.BLUE_RAY = 'Blue-ray'
-    }
+  constructor() {
+    this.VHS = "VHS";
+    this.DVD = "DVD";
+    this.BLU_RAY = "Blu-Ray";
+  }
+
+  getValues() {
+    return [this.VHS, this.DVD, this.BLU_RAY];
+  }
 }
 
 module.exports = new FormatMovieEnum();
