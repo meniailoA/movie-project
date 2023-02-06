@@ -1,5 +1,5 @@
-# WebbyLab
-movies-project
+# Movie project
+
 
 ## Requirements
 ```
