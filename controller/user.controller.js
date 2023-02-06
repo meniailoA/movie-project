@@ -14,9 +14,8 @@ class UserController {
   async create(req, res, next) {
     try {
       const body = req.body;
-      if (!validSchema(req)) return res.json({ message: "NO" });
       const response = await userService.create(body);
-
+      
       res.json(response);
     } catch (err) {
       next(err);

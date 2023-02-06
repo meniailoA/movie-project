@@ -26,22 +26,22 @@ class MovieRepositoryService {
 
         let stars = element.Stars.trim();
 
-        const startsPromise = stars.split(", ").map(async (name) => {
+        const startsPromise = stars.split(",").map(async (name) => {
           let actor = await this.findActorByName(name);
 
           if (!actor) {
             const actorNew = await this.createActor(name);
 
             return await this.createActorToMovie(actorNew.id, movie.id);
-          } else {
-            const checkExistActorInMovie = await this.findActorExistInMoview(
-              actor.id,
-              movie.id
-            );
+          }
+          
+          const checkExistActorInMovie = await this.findActorExistInMoview(
+            actor.id,
+            movie.id
+          );
 
-            if (!checkExistActorInMovie) {
-              return await this.createActorToMovie(actor.id, movie.id);
-            }
+          if (!checkExistActorInMovie) {
+            return await this.createActorToMovie(actor.id, movie.id);
           }
         });
 

@@ -13,7 +13,7 @@ class AuthController {
     }
   }
 
-  //I made a simple system of auth, but, to make auth with the well-made logout we need to use cookies, 
+  //i made a simple system of auth, but, to make auth with the well-made logout we need to use cookies, 
   //send me this to BUGs list, if you want to see a full auth)
 
   async logout(req, res, next) {

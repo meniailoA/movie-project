@@ -10,9 +10,18 @@ class MovieController {
     }
   }
 
+  async uploadFileWeb(req, res, next) {
+    try {
+      res.render("index");
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async getWithWebFile(req, res, next) {
     try {
-      const file = req.files.file.data;
+      const file = req.files;
+
       const response = await movieService._syncWithDbWeb(file);
       res.json({ message: "Successful" });
     } catch (err) {

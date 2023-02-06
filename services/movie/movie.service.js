@@ -1,41 +1,44 @@
 const repository = require("./movie.repository.service");
 const fs = require("fs");
+const path = require("path");
+const { dirname } = require("path");
 
 const getMovieSchema = require("./responses/get-movie-info").schema;
 
 class MovieService {
-  _fileReader() {
-    const data = fs.readFileSync("movies.txt");
+  // _fileReader() {
+  //   const data = fs.readFileSync("movies.txt");
+  //   const array = data.toString().split("\n");
+  //   const arr = [];
+
+  //   let count = 0;
+  //   let response = [];
+
+  //   for (let i in array) {
+  //     if (array[i].split(":")[0] && array[i].split(":")[1]) {
+  //       arr.push({
+  //         [array[i].split(":")[0]]: array[i].split(":")[1],
+  //       });
+  //     }
+  //   }
+
+  //   for (let i = 0; i < arr.length; i += 4) {
+  //     response[count] = Object.assign(
+  //       {},
+  //       arr[i],
+  //       arr[i + 1],
+  //       arr[i + 2],
+  //       arr[i + 3]
+  //     );
+  //     count++;
+  //   }
+
+  //   return response;
+  // }
+
+  _fileReaderWeb(filename) {
+    const data = fs.readFileSync(path.join(appRoot,  "public", "uploads", filename));
     const array = data.toString().split("\n");
-    const arr = [];
-
-    let count = 0;
-    let response = [];
-
-    for (let i in array) {
-      if (array[i].split(":")[0] && array[i].split(":")[1]) {
-        arr.push({
-          [array[i].split(":")[0]]: array[i].split(":")[1],
-        });
-      }
-    }
-
-    for (let i = 0; i < arr.length; i += 4) {
-      response[count] = Object.assign(
-        {},
-        arr[i],
-        arr[i + 1],
-        arr[i + 2],
-        arr[i + 3]
-      );
-      count++;
-    }
-
-    return response;
-  }
-
-  _fileReaderWeb(file) {
-    const array = file.toString().split("\n");
     const arr = [];
 
     let count = 0;
@@ -69,7 +72,14 @@ class MovieService {
   }
 
   async _syncWithDbWeb(file) {
-    return await repository._moveDataToTable(this._fileReaderWeb(file));
+    const file_ = file.myFile;
+    const filename = file_.name;
+
+    const savePath = path.join(appRoot, "public", "uploads", filename);
+
+    await file_.mv(savePath);
+
+    return await repository._moveDataToTable(this._fileReaderWeb(filename));
   }
 
   async _findActorsToMovie(movie, isArr = true) {
