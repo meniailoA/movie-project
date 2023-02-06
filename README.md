@@ -10,7 +10,7 @@ movies-project
 
 ### Git Setup
 ```
-git clone git@github.com:meniailoA/webbylab.git
+git clone git@github.com:meniailoA/movie-project.git
 ```
 ### Docker Setup
  https://hub.docker.com/r/alexmeniailo/webbylab-movie
