@@ -1,4 +1,4 @@
-# webbylab
+# WebbyLab
 movies-project
 
 ## Requirements
