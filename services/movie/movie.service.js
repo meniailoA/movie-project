@@ -1,7 +1,8 @@
 const repository = require("./movie.repository.service");
 const fs = require("fs");
 const path = require("path");
-const { dirname } = require("path");
+const formatMovieEnum = require("../../model/enum/format-movie.enum");
+const e = require("express");
 
 const getMovieSchema = require("./responses/get-movie-info").schema;
 
@@ -37,7 +38,9 @@ class MovieService {
   // }
 
   _fileReaderWeb(filename) {
-    const data = fs.readFileSync(path.join(appRoot,  "public", "uploads", filename));
+    const data = fs.readFileSync(
+      path.join(appRoot, "public", "uploads", filename)
+    );
     const array = data.toString().split("\n");
     const arr = [];
 
@@ -104,6 +107,7 @@ class MovieService {
 
       return await Promise.all(promise);
     }
+
     const moviesWithActors = await repository.findAllMovieToActorByMovieId(
       movie.id
     );
@@ -135,14 +139,65 @@ class MovieService {
     return await this._findActorsToMovie(movie);
   }
 
+  // _testBody(movieObj) {
+  //   if (!movieObj.name) {
+  //     return "title is empty";
+  //   } else if (
+  //     !Number.isInteger(+movieObj.date) ||
+  //     movieObj.date < 1800 ||
+  //     movieObj.date > 2100
+  //   ) {
+  //     return "Date should be in rage of 1800 - 2100";
+  //   } else if (!movieObj.format) {
+  //     movieObj.format = formatMovieEnum.DVD;
+  //   }
+  // }
+
+  _contains(target, pattern) {
+    let value = 0;
+    pattern.forEach(function (word) {
+      value = value + target.includes(word);
+    });
+    return value === 1;
+  }
+
   async createMovie(movieObj) {
+    const textName = movieObj.name.split("").filter((el) => el != " ");
+    if (!movieObj.name || textName.length < 1) {
+      return "title is empty";
+    } else if (
+      !Number.isInteger(+movieObj.date) ||
+      movieObj.date < 1800 ||
+      movieObj.date > 2100
+    ) {
+      return "Date should be in rage of 1800 - 2100";
+    } else if (!movieObj.format) {
+      movieObj.format = formatMovieEnum.DVD;
+    }
+
     const checkMovie = await repository.findMovieByName(movieObj.name);
+    const formats = formatMovieEnum.getValues();
+
+    if (!formats.includes(movieObj.format))
+      return "Format should be one of them DVD, Blu-Ray, VHS";
 
     if (checkMovie) return "There is movie with the same name";
 
+    movieObj.actors = movieObj.actors.filter(
+      (el, id) => movieObj.actors.indexOf(el) === id
+    );
+    
+    const actrorsCheck = movieObj.actors.toString().split(",").join(" ");
+    const bad = ["%", "?", "_", ";", "@", "*", "(", ")", "+", "#", "№"];
+    const check = actrorsCheck.split(" ").filter((el) => el != "");
+
+    if (this._contains(actrorsCheck, bad) || check.length < 1) {
+      return "You can't use ?!@_;()#№ in actor's name or use space as a name";
+    }
+
     const movie = await repository.createMovie(
       movieObj.name,
-      movieObj.date,
+      new Date(movieObj.date),
       movieObj.format
     );
 
@@ -172,41 +227,24 @@ class MovieService {
   }
 
   async getMovieInfoByActorName(name) {
-    let allActors = await repository.findAllActors();
-    allActors = allActors.map((el) => el.name);
+    const actors = await repository.findAllActorByName(name);
 
-    const movie = await repository.findMovieByName(name);
+    if (!actors.length) return "Actor with this name is not in the base";
 
-    if (!allActors.includes(name) && !movie)
-      return `There is no actor and movie with that name`;
-    else if (!allActors.includes(name) && movie) {
-      const moviesWithActors = await repository.findAllMovieToActorByMovieId(
-        movie.id
-      );
+    const promise = actors.map(async (actor) => {
+      const allMovies = await repository.findAllMoviesToActor(actor.id);
 
-      const actors = [];
+      if (allMovies.length) {
+        return await Promise.all(
+          allMovies.map(async (movie) => {
+            const movieObj = await repository.findMovieById(movie.MovieId);
+            return await this._findActorsToMovie(movieObj, false);
+          })
+        );
+      }
+    });
 
-      const promise = moviesWithActors.map(async (el) => {
-        const actor = await repository.findActorById(el.ActorId);
-
-        actors.push(`${actor.name}`);
-      });
-
-      await Promise.all(promise);
-
-      const movieResponse = await this._findActorsToMovie(movie, false);
-
-      return `There is no actor with that name, but i found movie with the same name: 
-
-      Title: ${movieResponse.Title}, 
-      Release Year: ${movieResponse["Release Year"]},
-      Format: ${movieResponse.Format},
-      Stars: ${movieResponse.Start}
-
-`;
-    }
-
-    return await this._findActorsToMovie(movie, false);
+    return await (await Promise.all(promise)).flat();
   }
 
   async deleteMovie(name) {

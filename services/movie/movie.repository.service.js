@@ -28,7 +28,7 @@ class MovieRepositoryService {
 
         const startsPromise = stars.split(",").map(async (name) => {
           name = name.trim();
-          
+
           const actor = await this.findActorByName(name);
 
           if (!actor) {
@@ -81,6 +81,23 @@ class MovieRepositoryService {
     });
   }
 
+  async findAllActorByName(name) {
+    return await Actor.findAll({
+      where: {
+        name,
+      },
+    });
+  }
+  
+
+  async findAllMoviesToActor(ActorId) {
+    return await MovieToActor.findAll({
+      where: {
+        ActorId,
+      },
+    });
+  }
+
   async findAllActors() {
     return await Actor.findAll();
   }
@@ -121,6 +138,14 @@ class MovieRepositoryService {
 
   async findAllMovieToActorByMovieId(MovieId) {
     return await MovieToActor.findAll({ where: { MovieId } });
+  }
+
+  async findMovieById(id) {
+    return await Movie.findOne({ where: { id } });
+  }
+
+  async findActorById(id) {
+    return await Actor.findOne({ where: { id } });
   }
 
   async findAllMovies(sort) {
