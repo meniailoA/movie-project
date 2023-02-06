@@ -27,14 +27,16 @@ class MovieRepositoryService {
         let stars = element.Stars.trim();
 
         const startsPromise = stars.split(",").map(async (name) => {
-          let actor = await this.findActorByName(name);
+          name = name.trim();
+          
+          const actor = await this.findActorByName(name);
 
           if (!actor) {
             const actorNew = await this.createActor(name);
 
             return await this.createActorToMovie(actorNew.id, movie.id);
           }
-          
+
           const checkExistActorInMovie = await this.findActorExistInMoview(
             actor.id,
             movie.id
@@ -74,7 +76,7 @@ class MovieRepositoryService {
   async findActorByName(name) {
     return await Actor.findOne({
       where: {
-        name: name.toString(),
+        name,
       },
     });
   }

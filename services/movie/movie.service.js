@@ -45,7 +45,7 @@ class MovieService {
     let response = [];
 
     for (let i in array) {
-      if (array[i].split(":")[0] && array[i].split(":")[1]) {
+      if (array[i].split(": ")[0] && array[i].split(": ")[1]) {
         arr.push({
           [array[i].split(": ")[0]]: array[i].split(": ")[2]
             ? `${array[i].split(": ")[1]} ${array[i].split(": ")[2]}`
