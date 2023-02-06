@@ -88,6 +88,7 @@ class MovieService {
   async _findActorsToMovie(movie, isArr = true) {
     if (isArr) {
       const promise = movie.map(async (m) => {
+        console.log(m);
         const moviesWithActors = await repository.findAllMovieToActorByMovieId(
           m.id
         );
@@ -96,8 +97,7 @@ class MovieService {
 
         const promise = moviesWithActors.map(async (el) => {
           const actor = await repository.findActorById(el.ActorId);
-
-          actors.push(`${actor.name}`);
+          actors.push(`${actor.firstName} ${actor.lastName}`);
         });
 
         await Promise.all(promise);
@@ -117,7 +117,7 @@ class MovieService {
     const promise = moviesWithActors.map(async (el) => {
       const actor = await repository.findActorById(el.ActorId);
 
-      actors.push(`${actor.name}`);
+      actors.push(`${actor.firstName} ${actor.lastName}`);
     });
 
     await Promise.all(promise);
@@ -153,7 +153,7 @@ class MovieService {
   //   }
   // }
 
-  _contains(target, pattern) {
+  contains(target, pattern) {
     let value = 0;
     pattern.forEach(function (word) {
       value = value + target.includes(word);
@@ -163,6 +163,7 @@ class MovieService {
 
   async createMovie(movieObj) {
     const textName = movieObj.name.split("").filter((el) => el != " ");
+
     if (!movieObj.name || textName.length < 1) {
       return "title is empty";
     } else if (
@@ -186,12 +187,12 @@ class MovieService {
     movieObj.actors = movieObj.actors.filter(
       (el, id) => movieObj.actors.indexOf(el) === id
     );
-    
+
     const actrorsCheck = movieObj.actors.toString().split(",").join(" ");
     const bad = ["%", "?", "_", ";", "@", "*", "(", ")", "+", "#", "№"];
     const check = actrorsCheck.split(" ").filter((el) => el != "");
 
-    if (this._contains(actrorsCheck, bad) || check.length < 1) {
+    if (this.contains(actrorsCheck, bad) || check.length < 1) {
       return "You can't use ?!@_;()#№ in actor's name or use space as a name";
     }
 
@@ -202,12 +203,16 @@ class MovieService {
     );
 
     const promise = movieObj.actors.map(async (name) => {
-      name = name.trim();
-
-      const actor = await repository.findActorByName(name);
+      name = name.trim().split(" ");
+      let actor;
+      if (name[1]) {
+        actor = await repository.findActorByName(name[0], name[1]);
+      } else {
+        actor = await repository.findActorByNameF(name[0]);
+      }
 
       if (!actor) {
-        const actorNew = await repository.createActor(name);
+        const actorNew = await repository.createActor(name[0], name[1]);
 
         return await repository.createActorToMovie(actorNew.id, movie.id);
       } else {
@@ -226,8 +231,14 @@ class MovieService {
     return "Successfully added";
   }
 
-  async getMovieInfoByActorName(name) {
-    const actors = await repository.findAllActorByName(name);
+  async getMovieInfoByActorName(name, movie) {
+    let actors;
+    name = name.trim().split(" ");
+    if (name[1]) {
+      actors = await repository.findAllActorByName(name[0], name[1]);
+    } else {
+      actors = await repository.findAllActorByNameFirst(name[0]);
+    }
 
     if (!actors.length) return "Actor with this name is not in the base";
 
@@ -244,7 +255,11 @@ class MovieService {
       }
     });
 
-    return await (await Promise.all(promise)).flat();
+    const response = await (await Promise.all(promise)).flat();
+
+    if (movie) return response.filter((el) => el.Title === movie);
+
+    return response;
   }
 
   async deleteMovie(name) {

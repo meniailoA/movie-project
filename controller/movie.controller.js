@@ -41,8 +41,8 @@ class MovieController {
 
   async getMovieInfoByActorName(req, res, next) {
     try {
-      const { name } = req.query;
-      const response = await movieService.getMovieInfoByActorName(name);
+      const { name, movie } = req.query;
+      const response = await movieService.getMovieInfoByActorName(name, movie);
       res.json(response);
     } catch (err) {
       next(err);

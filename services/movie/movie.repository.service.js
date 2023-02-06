@@ -1,17 +1,23 @@
 const MovieToActor = require("../../model/MovieToActor");
 const Movie = require("../../model/Movie");
 const Actor = require("../../model/Actor");
-
 const { Sequelize, Op } = require("sequelize");
-
 const FormatEnum = require("../../model/enum/format-movie.enum");
 
 class MovieRepositoryService {
+  contains(target, pattern) {
+    let value = 0;
+    pattern.forEach(function (word) {
+      value = value + target.includes(word);
+    });
+    return value === 1;
+  }
+
   async _moveDataToTable(movies) {
     const format = FormatEnum.getValues();
 
     const promise = movies.map(async (element) => {
-      const movieExist = await this.findMovieByName(element.Title);
+      const movieExist = await this.findMovieByName(element.Title.trim());
 
       if (!movieExist) {
         const formatMovie = format.includes(element.Format.trim())
@@ -26,13 +32,13 @@ class MovieRepositoryService {
 
         let stars = element.Stars.trim();
 
-        const startsPromise = stars.split(",").map(async (name) => {
-          name = name.trim();
-
-          const actor = await this.findActorByName(name);
+        const startsPromise = stars.split(", ").map(async (name) => {
+          name = name.trim().split(" ");
+       
+          const actor = await this.findActorByName(name[0].trim(), name[1].trim());
 
           if (!actor) {
-            const actorNew = await this.createActor(name);
+            const actorNew = await this.createActor(name[0].trim(), name[1].trim());
 
             return await this.createActorToMovie(actorNew.id, movie.id);
           }
@@ -47,19 +53,16 @@ class MovieRepositoryService {
           }
         });
 
-        await Promise.all(startsPromise);
+        return await Promise.all(startsPromise);
       }
     });
 
-    await Promise.all(promise);
+    return await Promise.all(promise);
   }
 
   async findMovieByName(name) {
     return await Movie.findOne({
-      where: Sequelize.where(
-        Sequelize.fn("lower", Sequelize.col("name")),
-        name.toLowerCase()
-      ),
+      where: { name },
     });
   }
 
@@ -73,22 +76,39 @@ class MovieRepositoryService {
     });
   }
 
-  async findActorByName(name) {
+  async findActorByName(firstName, lastName) {
     return await Actor.findOne({
       where: {
-        name,
+        firstName,
+        lastName,
       },
     });
   }
 
-  async findAllActorByName(name) {
+  async findActorByNameF(firstName) {
+    return await Actor.findOne({
+      where: {
+        firstName,
+      },
+    });
+  }
+
+  async findAllActorByName(firstName, lastName) {
     return await Actor.findAll({
       where: {
-        name,
+        firstName,
+        lastName,
       },
     });
   }
   
+  async findAllActorByNameFirst(firstName) {
+    return await Actor.findAll({
+      where: {
+        firstName
+      },
+    });
+  }
 
   async findAllMoviesToActor(ActorId) {
     return await MovieToActor.findAll({
@@ -118,9 +138,10 @@ class MovieRepositoryService {
     return await MovieToActor.create({ ActorId, MovieId });
   }
 
-  async createActor(name) {
+  async createActor(firstName, lastName) {
     return await Actor.create({
-      name,
+      firstName,
+      lastName
     });
   }
 

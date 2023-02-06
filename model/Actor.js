@@ -5,7 +5,10 @@ class Actor extends Model {}
 
 Actor.init(
   {
-    name: {
+    firstName: {
+      type: DataTypes.STRING,
+    },
+    lastName: {
       type: DataTypes.STRING,
     }
   },
