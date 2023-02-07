@@ -133,10 +133,15 @@ class MovieService {
     return await this._findActorsToMovie(movie);
   }
 
-  async getInfoAboutAllMovies() {
-    const movie = await repository.findAllMovies();
+  uaSort(s1, s2) {
+    return s1.localeCompare(s2);
+  }
 
-    return await this._findActorsToMovie(movie);
+  async getInfoAboutAllMovies() {
+    const movie = await repository.findAllMovies(); 
+    const localeCompare = (a, b) => a.Title.localeCompare(b.Title);
+    let movies = await this._findActorsToMovie(movie);
+    return movies.sort(localeCompare);
   }
 
   // _testBody(movieObj) {
