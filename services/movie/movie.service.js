@@ -140,7 +140,7 @@ class MovieService {
   async getInfoAboutAllMovies() {
     const movie = await repository.findAllMovies();
     const localeCompare = (a, b) =>
-      a.Title.toLowerCase().localeCompare(b.Title.toLowerCase(), "ua");
+      a.Title.toLowerCase().localeCompare(b.Title.toLowerCase(), "uk-UA");
     let movies = await this._findActorsToMovie(movie);
     return movies.sort(localeCompare);
   }
